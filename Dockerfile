@@ -8,7 +8,8 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 WORKDIR /app
 
 # Copy pyproject.toml for dependency installation
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml ./
+# Note: uv.lock is ignored in .gitignore, so we only copy pyproject.toml
 
 # Install Python dependencies using uv (without installing the project itself)
 RUN uv sync --no-install-project
