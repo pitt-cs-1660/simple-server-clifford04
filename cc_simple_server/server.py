@@ -27,76 +27,52 @@ async def read_root():
 # POST ROUTE data is sent in the body of the request
 @app.post("/tasks/", response_model=TaskRead)
 async def create_task(task_data: TaskCreate):
-    """
-    Create a new task
-
-    Args:
-        task_data (TaskCreate): The task data to be created
-
-    Returns:
-        TaskRead: The created task data
-    """
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO tasks (title, description, completed) VALUES (?, ?, ?)",
-            (task_data.title, task_data.description, task_data.completed)
-        )
-        task_id = cursor.lastrowid
-        conn.commit()
-        conn.close()
+ 
+ 
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO tasks (title, description, completed) VALUES (?, ?, ?)",
+        (task_data.title, task_data.description, task_data.completed)
+    )
+    task_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
         
         # Return the created task with its ID
-        return TaskRead(
-            id=task_id,
-            title=task_data.title,
-            description=task_data.description,
-            completed=task_data.completed
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database error: {str(e)}"
-        )
+    return TaskRead(
+        id=task_id,
+        title=task_data.title,
+        description=task_data.description,
+        completed=task_data.completed
+    )
+  
 
 
 # GET ROUTE to get all tasks
 @app.get("/tasks/", response_model=list[TaskRead])
 async def get_tasks():
-    """
-    Get all tasks in the whole wide database
 
-    Args:
-        None
-
-    Returns:
-        list[TaskRead]: A list of all tasks in the database
-    """
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, title, description, completed FROM tasks")
-        rows = cursor.fetchall()
-        conn.close()
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, title, description, completed FROM tasks")
+    rows = cursor.fetchall()
+    conn.close()
         
         # Convert database rows to TaskRead objects
-        tasks = []
-        for row in rows:
-            task = TaskRead(
-                id=row["id"],
-                title=row["title"],
-                description=row["description"],
-                completed=bool(row["completed"])
-            )
-            tasks.append(task)
-        
-        return tasks
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database error: {str(e)}"
+    tasks = []
+    for row in rows:
+        task = TaskRead(
+            id=row["id"],
+            title=row["title"],
+            description=row["description"],
+            completed=bool(row["completed"])
         )
+        tasks.append(task)
+        
+    return tasks
+    
 
 
 # UPDATE ROUTE data is sent in the body of the request and the task_id is in the URL
@@ -112,41 +88,35 @@ async def update_task(task_id: int, task_data: TaskCreate):
     Returns:
         TaskRead: The updated task data
     """
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
         
         # First check if the task exists
-        cursor.execute("SELECT id FROM tasks WHERE id = ?", (task_id,))
-        if not cursor.fetchone():
-            conn.close()
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Task with id {task_id} not found"
-            )
+    cursor.execute("SELECT id FROM tasks WHERE id = ?", (task_id,))
+    if not cursor.fetchone():
+        conn.close()
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task with id {task_id} not found"
+        )
         
         # Update the task
-        cursor.execute(
-            "UPDATE tasks SET title = ?, description = ?, completed = ? WHERE id = ?",
-            (task_data.title, task_data.description, task_data.completed, task_id)
-        )
-        conn.commit()
-        conn.close()
+    cursor.execute(
+        "UPDATE tasks SET title = ?, description = ?, completed = ? WHERE id = ?",
+        (task_data.title, task_data.description, task_data.completed, task_id)
+    )
+    conn.commit()
+    conn.close()
         
         # Return the updated task
-        return TaskRead(
-            id=task_id,
-            title=task_data.title,
-            description=task_data.description,
-            completed=task_data.completed
-        )
-    except HTTPException:
-        raise  # Re-raise HTTPExceptions as-is
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database error: {str(e)}"
-        )
+    return TaskRead(
+        id=task_id,
+        title=task_data.title,
+        description=task_data.description,
+        completed=task_data.completed
+    )
+    
 
 
 # DELETE ROUTE task_id is in the URL
@@ -161,29 +131,23 @@ async def delete_task(task_id: int):
     Returns:
         dict: A message indicating that the task was deleted successfully
     """
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
         
         # First check if the task exists
-        cursor.execute("SELECT id FROM tasks WHERE id = ?", (task_id,))
-        if not cursor.fetchone():
-            conn.close()
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Task with id {task_id} not found"
-            )
+    cursor.execute("SELECT id FROM tasks WHERE id = ?", (task_id,))
+    if not cursor.fetchone():
+        conn.close()
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task with id {task_id} not found"
+        )
         
         # Delete the task
-        cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
-        conn.commit()
-        conn.close()
+    cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+    conn.commit()
+    conn.close()
         
-        return {"message": f"Task {task_id} deleted successfully"}
-    except HTTPException:
-        raise  # Re-raise HTTPExceptions as-is
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database error: {str(e)}"
-        )
+    return {"message": f"Task {task_id} deleted successfully"}
+    
